@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  mongodb:
+    container_name: chat_mongodb
+    image: mongo:7.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodata:/data/db
+volumes:
+  mongodata:
+    driver: local
