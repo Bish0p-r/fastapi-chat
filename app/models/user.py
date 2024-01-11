@@ -1,13 +1,5 @@
-import uuid
-from typing import Annotated, Optional
-
-import pydantic
-from bson import ObjectId
-from pydantic import BaseModel, Field, BeforeValidator, model_validator, EmailStr
-from pydantic_mongo import ObjectIdField
-from app.common.models import BaseMongoDBModel
+from pydantic import BaseModel, Field, model_validator, EmailStr
 from beanie import Document
-
 
 
 class User(Document):
