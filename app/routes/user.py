@@ -12,11 +12,11 @@ router = APIRouter(
 )
 
 
-@router.get("/list")
-async def get_users(user_services: UserServices = GetUserServices) -> list[User]:
+@router.get("/")
+async def get_users(user_services: GetUserServices) -> list[User]:
     return await user_services.get_users()
 
 
 @router.get("/{user_id}")
-async def get_user(user_id: PydanticObjectId, user_services: UserServices = GetUserServices) -> User:
+async def get_user(user_id: PydanticObjectId, user_services: GetUserServices) -> User:
     return await user_services.get_user_by_id(user_id=user_id)
