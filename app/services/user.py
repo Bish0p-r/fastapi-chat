@@ -28,7 +28,3 @@ class UserServices:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User with this email already exists")
         hashed_password = get_hash_password(user_data.get('password'))
         return await self.repository.create(**user_data, hashed_password=hashed_password)
-
-    async def login(self):
-        pass
-

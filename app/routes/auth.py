@@ -21,11 +21,12 @@ async def registration(user_data: UserCreateSchema, user_services: GetUserServic
 
 
 @router.post("/login")
-async def login(response: Response, user_data: UserLoginSchema, auth_services: GetAuthServices):
+async def login(user_data: UserLoginSchema, auth_services: GetAuthServices, response: Response, request: Request) -> Token:
     data = user_data.model_dump(mode='json')
-    token = await auth_services.login(user_data=data)
-    response.set_cookie(key="chat_access_token", value=token, httponly=True)
-    return token
+    access_token, refresh_token = await auth_services.login(user_data=data)
+    response.set_cookie(key="chat_refresh_token", value=refresh_token, httponly=True)
+    request.state.device_id = 'asdasd'
+    return Token(access_token=access_token, refresh_token=refresh_token)
 
 
 @router.post("/logout")
@@ -34,8 +35,10 @@ async def logout(response: Response) -> None:
 
 
 @router.post("/refresh")
-async def refresh_token(auth_services: GetAuthServices):
-    return
+async def refresh(auth_services: GetAuthServices, response: Response, request: Request) -> Token:
+    access_token, refresh_token = await auth_services.refresh_tokens(token=request.cookies.get("chat_refresh_token"))
+    response.set_cookie(key="chat_refresh_token", value=refresh_token, httponly=True)
+    return Token(access_token=access_token, refresh_token=refresh_token)
 
 
 @router.post("/test")
@@ -43,5 +46,7 @@ async def test(user: GetCurrentUser) -> User:
     return user
 
 @router.get("/test")
-async def test(user: GetCurrentUser) -> User:
-    return user
+async def test(request: Request):
+    # request.state.device_id = 'asdasd'
+    print(request.state.device_id)
+    return request.headers

@@ -5,9 +5,11 @@ from beanie import Document
 
 class RefreshToken(Document):
     user_id: str
+    device_id: str
     refresh_token: str
-    expires_at: datetime = datetime.utcnow() + timedelta(days=30)
     created_at: datetime = datetime.utcnow()
+    expires_at: datetime = created_at + timedelta(days=30)
+
 
     class Settings:
         name = "refreshTokens"

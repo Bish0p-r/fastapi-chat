@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str
 
+    ACCESS_TOKEN_EXP_MINUTES: int = 30
+    REFRESH_TOKEN_EXP_DAYS: int = 30
+
     MONGODB_HOST: str
     MONGODB_PORT: int
     MONGODB_USER: str

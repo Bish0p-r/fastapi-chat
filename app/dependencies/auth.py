@@ -1,4 +1,4 @@
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from typing import Annotated
 
@@ -15,15 +15,14 @@ async def get_auth_services():
 GetAuthServices = Annotated[AuthServices, Depends(get_auth_services)]
 
 
-# http_bearer = HTTPBearer()
 http_bearer = Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer())]
 
-async def get_user_from_token(auth_services: GetAuthServices, token: http_bearer) -> User:
+async def get_user_from_token(auth_services: GetAuthServices, token: http_bearer, request: Request) -> User:
     access_token = token.credentials
     user = await auth_services.get_user_from_token(token=access_token)
+    print(request.cookies.get("chat_refresh_token"))
     if user is None:
         raise InvalidTokenException
     return user
-
 
 GetCurrentUser = Annotated[User, Depends(get_user_from_token)]
