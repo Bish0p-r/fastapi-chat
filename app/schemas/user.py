@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, EmailStr, Field, model_validator, ConfigDict
 
 
 class UserLoginSchema(BaseModel):
@@ -19,3 +19,11 @@ class UserCreateSchema(UserLoginSchema):
         if pw1 is not None and pw2 is not None and pw1 != pw2:
             raise ValueError("passwords do not match")
         return self
+
+
+class UserUpdateSchema(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    first_name: str = Field(min_length=8, max_length=50)
+    last_name: str = Field(min_length=8, max_length=50)
+

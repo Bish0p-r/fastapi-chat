@@ -28,3 +28,6 @@ class UserServices:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User with this email already exists")
         hashed_password = get_hash_password(user_data.get('password'))
         return await self.repository.create(**user_data, hashed_password=hashed_password)
+
+    async def partial_update(self, user_id: str, user_data: dict) -> User:
+        return await self.repository.update(user_id=user_id, user_data=user_data)

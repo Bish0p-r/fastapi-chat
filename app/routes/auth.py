@@ -53,11 +53,3 @@ async def logout_from_all_devices(auth_services: GetAuthServices, user: GetCurre
     await auth_services.logout_from_all_devices(user=user)
     response.delete_cookie(key="chat_refresh_token")
     return {"message": "Successful logout"}
-
-@router.post("/test")
-async def test(user: GetCurrentUser) -> User:
-    return user
-
-@router.get("/test")
-async def test(request: Request):
-    return request.headers

@@ -21,8 +21,10 @@ class UserRepository:
         return instance
 
     @classmethod
-    async def update(cls, user_id: str, data) -> collection:
-        pass
+    async def update(cls, user_id: str, user_data: dict) -> collection:
+        instance = await cls.collection.find_one(cls.collection.id == user_id)
+        await instance.set(user_data)
+        return instance
 
     @classmethod
     async def delete(cls, user_id: str) -> None:
