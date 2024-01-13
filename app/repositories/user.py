@@ -25,5 +25,5 @@ class UserRepository:
         pass
 
     @classmethod
-    async def delete(cls, user_id: str):
+    async def delete(cls, user_id: str) -> None:
         pass

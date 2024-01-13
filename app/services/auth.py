@@ -1,7 +1,6 @@
-import uuid
 from datetime import datetime, timedelta
 
-from fastapi import Response, HTTPException, status
+from fastapi import HTTPException, status
 from jose import jwt, JWTError, ExpiredSignatureError
 from beanie import PydanticObjectId
 
@@ -37,7 +36,6 @@ class AuthServices:
             raise InvalidTokenException
         return payload
 
-
     async def validate_refresh_token(self, token: str, user_agent: str) -> RefreshToken:
         existed_token = await self.auth_repository.get_by_refresh_token(refresh_token=token)
         if existed_token is None:
@@ -46,7 +44,6 @@ class AuthServices:
         payload = await self.decode_token(token)
         if payload.get("user_agent") != user_agent or payload.get("type") != "refresh-token":
             raise InvalidTokenException
-
         return existed_token
 
     async def create_access_token(
@@ -72,6 +69,9 @@ class AuthServices:
         await self.auth_repository.create(**token_data)
         return refresh_token
 
+    async def issue_tokens_for_user(self, token_data:dict) -> tuple[str, str]:
+        return await self.create_access_token(data=token_data), await self.create_refresh_token(data=token_data)
+
     async def get_user_from_token(self, token: str) -> User:
         payload = await self.decode_token(token)
         data = {}
@@ -87,28 +87,24 @@ class AuthServices:
             raise InvalidTokenException
         return await self.user_repository.get_by_kwargs(**data)
 
-    async def login(self, user_data: dict, user_agent: str):
+    async def login(self, user_data: dict, user_agent: str) -> tuple[str, str]:
         user = await self.user_repository.get_by_kwargs(email=user_data["email"])
         if not user or not verify_password(user_data["password"], user.hashed_password):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
 
         await self.auth_repository.delete_by_agent_and_id(user_id=user.id, user_agent=user_agent)
-
         data = {"sub": str(user.id),"user_agent": user_agent}
-        access_token = await self.create_access_token(data=data)
-        refresh_token = await self.create_refresh_token(data=data)
-        return access_token, refresh_token
+        return await self.issue_tokens_for_user(token_data=data)
 
-    async def logout(self, token: str, user_agent: str):
+    async def logout(self, token: str, user_agent: str) -> None:
         existed_token = await self.validate_refresh_token(token=token, user_agent=user_agent)
         await self.auth_repository.delete_by_id(_id=existed_token.id)
 
-    async def refresh_tokens(self, token: str, user_agent:str):
+    async def refresh_tokens(self, token: str, user_agent:str) -> tuple[str, str]:
         existed_token = await self.validate_refresh_token(token=token, user_agent=user_agent)
         await self.auth_repository.delete_by_id(_id=existed_token.id)
-
         data = {"sub": existed_token.user_id, "user_agent": existed_token.user_agent}
-        access_token = await self.create_access_token(data=data)
-        refresh_token = await self.create_refresh_token(data=data)
-        return access_token, refresh_token
+        return await self.issue_tokens_for_user(token_data=data)
 
+    async def logout_from_all_devices(self, user) -> None:
+        await self.auth_repository.delete(**{"user_id": user.id})

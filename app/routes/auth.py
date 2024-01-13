@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Response, Depends, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import APIRouter, Response, Request, status
+from fastapi.responses import JSONResponse
 
 from app.models.user import User
 from app.schemas.auth import Token
@@ -21,7 +21,9 @@ async def registration(user_data: UserCreateSchema, user_services: GetUserServic
 
 
 @router.post("/login")
-async def login(user_data: UserLoginSchema, auth_services: GetAuthServices, response: Response, request: Request) -> Token:
+async def login(
+        user_data: UserLoginSchema, auth_services: GetAuthServices, response: Response, request: Request
+) -> Token:
     data = user_data.model_dump(mode='json')
     user_agent = request.headers.get("user-agent")
     access_token, refresh_token = await auth_services.login(user_data=data, user_agent=user_agent)
@@ -30,11 +32,12 @@ async def login(user_data: UserLoginSchema, auth_services: GetAuthServices, resp
 
 
 @router.post("/logout")
-async def logout(auth_services: GetAuthServices, response: Response, request: Request) -> None:
+async def logout(auth_services: GetAuthServices, response: Response, request: Request):
     token = request.cookies.get("chat_refresh_token")
     user_agent = request.headers.get("user-agent")
     await auth_services.logout(token=token, user_agent=user_agent)
     response.delete_cookie(key="chat_refresh_token")
+    return {"message": "Successful logout"}
 
 
 @router.post("/refresh")
@@ -45,6 +48,11 @@ async def refresh(auth_services: GetAuthServices, response: Response, request: R
     response.set_cookie(key="chat_refresh_token", value=refresh_token, httponly=True)
     return Token(access_token=access_token, refresh_token=refresh_token)
 
+@router.post("/logout-from-all-devices")
+async def logout_from_all_devices(auth_services: GetAuthServices, user: GetCurrentUser, response: Response):
+    await auth_services.logout_from_all_devices(user=user)
+    response.delete_cookie(key="chat_refresh_token")
+    return {"message": "Successful logout"}
 
 @router.post("/test")
 async def test(user: GetCurrentUser) -> User:
