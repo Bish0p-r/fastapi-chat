@@ -48,6 +48,7 @@ async def refresh(auth_services: GetAuthServices, response: Response, request: R
     response.set_cookie(key="chat_refresh_token", value=refresh_token, httponly=True)
     return Token(access_token=access_token, refresh_token=refresh_token)
 
+
 @router.post("/logout-from-all-devices")
 async def logout_from_all_devices(auth_services: GetAuthServices, user: GetCurrentUser, response: Response):
     await auth_services.logout_from_all_devices(user=user)

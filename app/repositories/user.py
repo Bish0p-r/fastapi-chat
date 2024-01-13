@@ -27,5 +27,5 @@ class UserRepository:
         return instance
 
     @classmethod
-    async def delete(cls, user_id: str) -> None:
-        pass
+    async def delete_by_id(cls, _id: str) -> None:
+         await cls.collection.find(cls.collection.id == _id).delete()

@@ -31,3 +31,6 @@ class UserServices:
 
     async def partial_update(self, user_id: str, user_data: dict) -> User:
         return await self.repository.update(user_id=user_id, user_data=user_data)
+
+    async def delete_profile(self, user_id: str) -> None:
+        await self.repository.delete_by_id(_id=user_id)
