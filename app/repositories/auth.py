@@ -22,7 +22,11 @@ class AuthRepository:
         await cls.collection.find(**kwargs).delete()
 
     @classmethod
-    async def delete_by_id(cls, id):
-        await cls.collection.find(cls.collection.id == id).delete()
+    async def delete_by_id(cls, _id):
+        await cls.collection.find(cls.collection.id == _id).delete()
+
+    @classmethod
+    async def delete_by_agent_and_id(cls, user_id, user_agent):
+        await cls.collection.find_all(cls.collection.id == user_id).find_many(cls.collection.user_agent == user_agent).delete()
 
 

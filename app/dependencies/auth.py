@@ -17,12 +17,14 @@ GetAuthServices = Annotated[AuthServices, Depends(get_auth_services)]
 
 http_bearer = Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer())]
 
-async def get_user_from_token(auth_services: GetAuthServices, token: http_bearer, request: Request) -> User:
+async def get_current_user_from_token(auth_services: GetAuthServices, token: http_bearer, request: Request) -> User:
     access_token = token.credentials
     user = await auth_services.get_user_from_token(token=access_token)
-    print(request.cookies.get("chat_refresh_token"))
-    if user is None:
+    payload = await auth_services.decode_token(token=access_token)
+    user_agent = request.headers.get("user-agent")
+
+    if user is None or payload.get("user_agent") is None or user_agent != payload.get("user_agent"):
         raise InvalidTokenException
     return user
 
-GetCurrentUser = Annotated[User, Depends(get_user_from_token)]
+GetCurrentUser = Annotated[User, Depends(get_current_user_from_token)]

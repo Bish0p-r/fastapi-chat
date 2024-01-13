@@ -10,6 +10,7 @@ from app.repositories.user import UserRepository
 from app.repositories.auth import AuthRepository
 from app.common.utils import verify_password
 from app.models.user import User
+from app.models.auth import RefreshToken
 from app.common.exceptions import InvalidTokenException, ExpiredTokenException
 
 
@@ -19,11 +20,7 @@ class AuthServices:
         self.user_repository = user_repository
 
     @staticmethod
-    async def __create_device_id() -> str:
-        return str(uuid.uuid4())
-
-    @staticmethod
-    async def create_token(data: dict, expire_in: timedelta = timedelta(minutes=settings.ACCESS_TOKEN_EXP_MINUTES)) -> str:
+    async def create_token(data: dict, expire_in: timedelta) -> str:
         to_encode = data.copy()
         expire = datetime.utcnow() + expire_in
         to_encode.update({"exp": expire})
@@ -40,9 +37,38 @@ class AuthServices:
             raise InvalidTokenException
         return payload
 
-    async def create_refresh_token(self, data, user_id: str, device_id: str) -> str:
-        refresh_token = await self.create_token(data=data, expire_in=timedelta(days=settings.REFRESH_TOKEN_EXP_DAYS))
-        token_data = {"user_id": user_id, "device_id": device_id, "refresh_token": refresh_token}
+
+    async def validate_refresh_token(self, token: str, user_agent: str) -> RefreshToken:
+        existed_token = await self.auth_repository.get_by_refresh_token(refresh_token=token)
+        if existed_token is None:
+            raise InvalidTokenException
+
+        payload = await self.decode_token(token)
+        if payload.get("user_agent") != user_agent or payload.get("type") != "refresh-token":
+            raise InvalidTokenException
+
+        return existed_token
+
+    async def create_access_token(
+            self,
+            data: dict,
+            expire_in: timedelta = timedelta(minutes=settings.ACCESS_TOKEN_EXP_MINUTES)
+    ):
+        data = data.copy()
+        data.update({"type": "access-token"})
+        return await self.create_token(data, expire_in=expire_in)
+
+    async def create_refresh_token(
+            self,
+            data: dict,
+            expire_in=timedelta(days=settings.REFRESH_TOKEN_EXP_DAYS)
+    ) -> str:
+        data = data.copy()
+        data.update({"type": "refresh-token"})
+        user_id = data.get("sub")
+        user_agent = data.get("user_agent")
+        refresh_token = await self.create_token(data=data, expire_in=expire_in)
+        token_data = {"user_id": user_id, "user_agent": user_agent, "refresh_token": refresh_token}
         await self.auth_repository.create(**token_data)
         return refresh_token
 
@@ -61,36 +87,28 @@ class AuthServices:
             raise InvalidTokenException
         return await self.user_repository.get_by_kwargs(**data)
 
-    async def login(self, user_data: dict):
+    async def login(self, user_data: dict, user_agent: str):
         user = await self.user_repository.get_by_kwargs(email=user_data["email"])
-
         if not user or not verify_password(user_data["password"], user.hashed_password):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
 
-        device_id = await self.__create_device_id()
-        access_token = await self.create_token(
-            data={"sub": str(user.id),"device_id": device_id, "type": "access-token"}
-        )
-        refresh_data = {"sub": str(user.id),"device_id": device_id, "type": "refresh-token"}
-        refresh_token = await self.create_refresh_token(data=refresh_data, user_id=str(user.id), device_id=device_id)
+        await self.auth_repository.delete_by_agent_and_id(user_id=user.id, user_agent=user_agent)
+
+        data = {"sub": str(user.id),"user_agent": user_agent}
+        access_token = await self.create_access_token(data=data)
+        refresh_token = await self.create_refresh_token(data=data)
         return access_token, refresh_token
 
-    async def refresh_tokens(self, token: str):
-        existed_token = await self.auth_repository.get_by_refresh_token(refresh_token=token)
-        if existed_token is None:
-            raise InvalidTokenException
+    async def logout(self, token: str, user_agent: str):
+        existed_token = await self.validate_refresh_token(token=token, user_agent=user_agent)
+        await self.auth_repository.delete_by_id(_id=existed_token.id)
 
-        payload = await self.decode_token(token)
-        if payload.get("device_id") != existed_token.device_id:
-            raise InvalidTokenException
+    async def refresh_tokens(self, token: str, user_agent:str):
+        existed_token = await self.validate_refresh_token(token=token, user_agent=user_agent)
+        await self.auth_repository.delete_by_id(_id=existed_token.id)
 
-        await self.auth_repository.delete_by_id(id=existed_token.id)
-
-        access_token = await self.create_token(
-            data={"sub": existed_token.user_id, "device_id": existed_token.device_id, "type": "access-token"}
-        )
-        refresh_data = {"sub": existed_token.user_id, "device_id": existed_token.device_id, "type": "refresh-token"}
-        refresh_token = await self.create_refresh_token(
-            data=refresh_data, user_id=existed_token.user_id, device_id=existed_token.device_id
-        )
+        data = {"sub": existed_token.user_id, "user_agent": existed_token.user_agent}
+        access_token = await self.create_access_token(data=data)
+        refresh_token = await self.create_refresh_token(data=data)
         return access_token, refresh_token
+
