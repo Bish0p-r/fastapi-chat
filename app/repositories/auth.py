@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from app.models.auth import RefreshToken
 
 class AuthRepository:
@@ -28,3 +30,7 @@ class AuthRepository:
     @classmethod
     async def delete_by_agent_and_id(cls, user_id, user_agent) -> None:
         await cls.collection.find_all(cls.collection.id == user_id).find_many(cls.collection.user_agent == user_agent).delete()
+
+    @classmethod
+    async def delete_expired_tokens(cls) -> None:
+        await cls.collection.find_many(cls.collection.expires_at < datetime.now()).delete()
