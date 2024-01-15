@@ -27,6 +27,7 @@ async def login(
     data = user_data.model_dump(mode='json')
     user_agent = request.headers.get("user-agent")
     access_token, refresh_token = await auth_services.login(user_data=data, user_agent=user_agent)
+    response.set_cookie(key="chat_access_token", value=access_token, httponly=True)
     response.set_cookie(key="chat_refresh_token", value=refresh_token, httponly=True)
     return Token(access_token=access_token, refresh_token=refresh_token)
 
@@ -36,6 +37,7 @@ async def logout(auth_services: GetAuthServices, response: Response, request: Re
     token = request.cookies.get("chat_refresh_token")
     user_agent = request.headers.get("user-agent")
     await auth_services.logout(token=token, user_agent=user_agent)
+    response.delete_cookie(key="chat_access_token")
     response.delete_cookie(key="chat_refresh_token")
     return {"message": "Successful logout"}
 
@@ -45,6 +47,7 @@ async def refresh(auth_services: GetAuthServices, response: Response, request: R
     token = request.cookies.get("chat_refresh_token")
     user_agent = request.headers.get("user-agent")
     access_token, refresh_token = await auth_services.refresh_tokens(token=token, user_agent=user_agent)
+    response.set_cookie(key="chat_access_token", value=access_token, httponly=True)
     response.set_cookie(key="chat_refresh_token", value=refresh_token, httponly=True)
     return Token(access_token=access_token, refresh_token=refresh_token)
 
@@ -52,5 +55,6 @@ async def refresh(auth_services: GetAuthServices, response: Response, request: R
 @router.post("/logout-from-all-devices")
 async def logout_from_all_devices(auth_services: GetAuthServices, user: GetCurrentUser, response: Response):
     await auth_services.logout_from_all_devices(user=user)
+    response.delete_cookie(key="chat_access_token")
     response.delete_cookie(key="chat_refresh_token")
     return {"message": "Successful logout"}

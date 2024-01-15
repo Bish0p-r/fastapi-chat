@@ -65,9 +65,11 @@ async def websocket_chat_room(
         auth_services: GetAuthServices
 ):
     # print(user)
-    print(websocket.headers)
+    # print(websocket.headers)
+    print(websocket.cookies)
+    # TODO: добавить аунтефикацию по токену в куки
     user = await get_current_user_from_token_ws(token=token, websocket=websocket, auth_services=auth_services)
-    print(user)
+    # print(user)
     await manager.connect(websocket)
     await manager.broadcast(f"Client #{room_id} joined the chat")
     try:

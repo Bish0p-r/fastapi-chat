@@ -16,7 +16,7 @@
             var client_id = Date.now();
             var token = `{{ request.headers.get("authorization") }}`;
             document.querySelector("#ws-id").textContent = client_id;
-            const ws = new WebSocket(`ws://localhost:8000/chat/ws/${client_id}?token=${token}`);
+            const ws = new WebSocket(`ws://127.0.0.1:8000/chat/ws/${client_id}?token=${token}`);
 
             ws.onmessage = function(event) {
                 var messages = document.getElementById('messages')
