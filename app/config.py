@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     MONGODB_PASSWORD: str
     MONGODB_NAME: str = 'chat_app'
 
+    RABBITMQ_URI: str = "amqp://admin:admin@localhost/"
+
     @property
     def MONGODB_CONN_STRING(self):
         return f"mongodb://{self.MONGODB_USER}:{self.MONGODB_PASSWORD}@{self.MONGODB_HOST}:{self.MONGODB_PORT}"

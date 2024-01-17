@@ -4,7 +4,7 @@
         <title>Chat</title>
     </head>
     <body>
-        <h1>WebSocket Chat {{token1}}</h1>
+        <h1>WebSocket Chat</h1>
         <h2>Your ID: <span id="ws-id"></span></h2>
         <form action="" onsubmit="sendMessage(event)">
             <input type="text" id="messageText" autocomplete="off"/>
@@ -14,9 +14,10 @@
         </ul>
         <script>
             var client_id = Date.now();
-            var token = `{{ request.headers.get("authorization") }}`;
+            var room_id = `{{ room_id }}`;
+            // var token = `{{ request.headers.get("authorization") }}`;
             document.querySelector("#ws-id").textContent = client_id;
-            const ws = new WebSocket(`ws://127.0.0.1:8000/chat/ws/${client_id}?token=${token}`);
+            const ws = new WebSocket(`ws://127.0.0.1:8000/chat/ws/${room_id}`);
 
             ws.onmessage = function(event) {
                 var messages = document.getElementById('messages')

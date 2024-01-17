@@ -31,8 +31,11 @@ async def get_current_user_from_token(auth_services: GetAuthServices, token: htt
 GetCurrentUser = Annotated[User, Depends(get_current_user_from_token)]
 
 
-async def get_current_user_from_token_ws(auth_services: AuthServices, token: str, websocket: WebSocket) -> User:
-    access_token = token.split()[1]
+async def get_current_user_from_token_ws(auth_services: GetAuthServices, websocket: WebSocket) -> User:
+    access_token = websocket.cookies.get("chat_access_token")
+    if access_token is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+
     user = await auth_services.get_user_from_token(token=access_token)
     payload = await auth_services.decode_token(token=access_token)
     user_agent = websocket.headers.get("user-agent")
@@ -40,3 +43,22 @@ async def get_current_user_from_token_ws(auth_services: AuthServices, token: str
     if user is None or payload.get("user_agent") is None or user_agent != payload.get("user_agent"):
         raise InvalidTokenException
     return user
+
+GetCurrentUserWS = Annotated[User, Depends(get_current_user_from_token_ws)]
+
+
+
+async def get_current_user_from_cookie(auth_services: GetAuthServices, request: Request) -> User:
+    access_token = request.cookies.get("chat_access_token")
+    if access_token is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+
+    user = await auth_services.get_user_from_token(token=access_token)
+    payload = await auth_services.decode_token(token=access_token)
+    user_agent = request.headers.get("user-agent")
+
+    if user is None or payload.get("user_agent") is None or user_agent != payload.get("user_agent"):
+        raise InvalidTokenException
+    return user
+
+GetCurrentUserFromCookie = Annotated[User, Depends(get_current_user_from_cookie)]
