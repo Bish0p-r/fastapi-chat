@@ -20,3 +20,9 @@ async def get_chat_services():
 
 GetChatServices = Annotated[ChatServices, Depends(get_chat_services)]
 
+
+async def get_message_services():
+    return MessageServices(repository=MessageRepository)
+
+
+GetMessageServices = Annotated[MessageServices, Depends(get_message_services)]

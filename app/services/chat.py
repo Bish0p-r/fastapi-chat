@@ -100,7 +100,7 @@ class MessageServices:
     def __init__(self, repository: type[MessageRepository]):
         self.repository = repository
 
-    async def get_last_messages(self):
-        return await self.repository.get_list()
+    async def get_messages(self, room_id: PydanticObjectId):
+        return await self.repository.get_chat_messages(chat_id=room_id)
 
 

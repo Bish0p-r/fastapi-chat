@@ -11,5 +11,6 @@ class ChatRepository(BaseRepository):
 class MessageRepository(BaseRepository):
     collection: Message = Message
 
-    async def get_chat_messages(self, chat_id: PydanticObjectId | str) -> list[Message]:
-        return await self.collection.find_all(chat_room_id=chat_id).sort("-created_at").to_list()
+    @classmethod
+    async def get_chat_messages(cls, chat_id: PydanticObjectId) -> list[collection]:
+        return await cls.collection.find_many(cls.collection.chat_room_id == chat_id).sort("created_at").to_list()

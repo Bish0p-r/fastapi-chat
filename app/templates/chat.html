@@ -2,6 +2,72 @@
 <html>
     <head>
         <title>Chat</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 20px;
+            }
+
+            h1 {
+                color: #333;
+            }
+
+            h2 {
+                color: #666;
+                font-size: 18px;
+                margin-bottom: 10px;
+            }
+
+            form {
+                margin-bottom: 20px;
+            }
+
+            input[type="text"] {
+                padding: 10px;
+                font-size: 16px;
+                border-radius: 5px;
+                border: 1px solid #999;
+            }
+
+            button {
+                padding: 10px 20px;
+                font-size: 16px;
+                border-radius: 5px;
+                background-color: #007bff;
+                color: #fff;
+                border: none;
+                cursor: pointer;
+            }
+
+            ul {
+                list-style-type: none;
+                padding: 0;
+            }
+
+            li {
+                margin-bottom: 10px;
+            }
+             #messages {
+                height: 300px;
+                overflow-y: auto;
+                border: 1px solid #ccc;
+                background-color: #f9f9f9;
+                padding: 10px;
+                border-radius: 5px;
+            }
+
+            li {
+                background-color: #fff;
+                padding: 10px;
+                border-radius: 5px;
+                margin-bottom: 10px;
+            }
+
+            li:nth-child(even) {
+                background-color: #f2f2f2;
+            }
+        </style>
     </head>
     <body>
         <h1>WebSocket Chat</h1>
@@ -10,24 +76,51 @@
             <input type="text" id="messageText" autocomplete="off"/>
             <button>Send</button>
         </form>
-        <ul id='messages'>
-        </ul>
+        <div id='messages'>
+        </div>
         <script>
-            var client_id = Date.now();
-            var room_id = `{{ room_id }}`;
-            // var token = `{{ request.headers.get("authorization") }}`;
-            document.querySelector("#ws-id").textContent = client_id;
-            const ws = new WebSocket(`ws://127.0.0.1:8000/chat/ws/${room_id}`);
+            let room_id = `{{ room_id }}`;
+            document.querySelector("#ws-id").textContent =`{{ user.id }}`;
 
-            ws.onmessage = function(event) {
-                var messages = document.getElementById('messages')
-                var message = document.createElement('li')
-                var content = document.createTextNode(event.data)
+            async function getLastMessages() {
+                const url = `http://127.0.0.1:8000/chat/messages/${room_id}`
+                const response = await fetch(url, {
+                    method: 'GET'
+                })
+                return response.json()
+            }
+
+            getLastMessages()
+                .then(messages => {
+                    appendMessage("Recent messages:")
+                    messages.forEach(msg => {
+                        appendMessage(`${msg.user.first_name} ${msg.user.last_name}: ${msg.message}`)
+                    })
+                    appendMessage("\nNew messages:")
+                    scrollToBottom();
+                })
+
+            function appendMessage(msg) {
+                let messages = document.getElementById('messages')
+                let message = document.createElement('li')
+                let content = document.createTextNode(msg)
                 message.appendChild(content)
                 messages.appendChild(message)
+            }
+
+            function scrollToBottom() {
+                let messages = document.getElementById('messages');
+                messages.scrollTop = messages.scrollHeight;
+            }
+
+            let ws = new WebSocket(`ws://127.0.0.1:8000/chat/ws/${room_id}`);
+            ws.onmessage = function (event) {
+                appendMessage(event.data);
+                scrollToBottom();
             };
+
             function sendMessage(event) {
-                var input = document.getElementById("messageText")
+                let input = document.getElementById("messageText")
                 ws.send(input.value)
                 input.value = ''
                 event.preventDefault()
@@ -35,4 +128,3 @@
         </script>
     </body>
 </html>
-"""

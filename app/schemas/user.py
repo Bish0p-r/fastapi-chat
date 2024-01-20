@@ -8,8 +8,8 @@ class UserLoginSchema(BaseModel):
 
 class UserCreateSchema(UserLoginSchema):
     confirm_password: str = Field(min_length=8, max_length=50)
-    first_name: str = Field(min_length=8, max_length=50)
-    last_name: str = Field(min_length=8, max_length=50)
+    first_name: str = Field(min_length=4, max_length=50)
+    last_name: str = Field(min_length=4, max_length=50)
 
     @model_validator(mode="after")
     def check_passwords_match(self):
@@ -24,6 +24,6 @@ class UserCreateSchema(UserLoginSchema):
 class UserUpdateSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    first_name: str = Field(min_length=8, max_length=50)
-    last_name: str = Field(min_length=8, max_length=50)
+    first_name: str = Field(min_length=4, max_length=50)
+    last_name: str = Field(min_length=4, max_length=50)
 
