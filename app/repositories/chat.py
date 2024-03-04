@@ -7,6 +7,10 @@ from app.common.base.repository import BaseRepository
 class ChatRepository(BaseRepository):
     collection: ChatRoom = ChatRoom
 
+    @classmethod
+    async def get_rooms_list(cls, is_private: bool = False) -> list[collection]:
+        return await cls.collection.find_all(cls.collection.is_private == is_private).to_list()
+
 
 class MessageRepository(BaseRepository):
     collection: Message = Message

@@ -1,3 +1,4 @@
+from beanie import PydanticObjectId
 from pydantic import BaseModel, EmailStr, Field, model_validator, ConfigDict
 
 
@@ -27,3 +28,9 @@ class UserUpdateSchema(BaseModel):
     first_name: str = Field(min_length=4, max_length=50)
     last_name: str = Field(min_length=4, max_length=50)
 
+
+class UserSchema(BaseModel):
+    id: PydanticObjectId
+    first_name: str
+    last_name: str
+    email: EmailStr

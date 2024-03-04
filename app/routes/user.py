@@ -1,10 +1,11 @@
 from beanie import PydanticObjectId
 from fastapi import APIRouter
 
+from app.common.base.schemas import JsonResponseSchema
 from app.models.user import User
 from app.schemas.user import UserUpdateSchema
 from app.dependencies.user import GetUserServices
-from app.dependencies.auth import GetCurrentUser
+from app.dependencies.auth import GetCurrentUser, GetCurrentUserFromCookie
 
 
 router = APIRouter(
@@ -19,7 +20,7 @@ async def get_users(user_services: GetUserServices) -> list[User]:
 
 
 @router.get("/me")
-async def get_my_profile(user: GetCurrentUser):
+async def get_my_profile(user: GetCurrentUserFromCookie) -> User:
     return user
 
 
@@ -28,10 +29,9 @@ async def update_my_profile(user: GetCurrentUser, user_data: UserUpdateSchema, u
     return await user_services.partial_update(user_id=user.id, user_data=user_data)
 
 
-@router.delete("/me")
+@router.delete("/me", response_model=JsonResponseSchema)
 async def delete_my_profile(user: GetCurrentUser, user_services: GetUserServices):
-    await user_services.delete_profile(user_id=user.id)
-    return {"message": "Profile successfully deleted"}
+    return await user_services.delete_profile(user_id=user.id)
 
 
 @router.get("/{user_id}")

@@ -95,6 +95,8 @@ class ChatServices:
         )
         await chat_manager.response()
 
+    async def public_chat_list(self):
+        return await self.repository.get_rooms_list()
 
 class MessageServices:
     def __init__(self, repository: type[MessageRepository]):

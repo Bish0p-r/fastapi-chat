@@ -16,9 +16,10 @@ class Message(Document):
 
 
 class ChatRoom(Document):
-    messages: list[Message] = None
+    messages: list[Message] = []
     owner: User
     users: list[User]
+    is_private: bool = False
 
     class Settings:
         name = "chatRooms"
