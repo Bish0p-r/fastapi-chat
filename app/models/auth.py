@@ -10,7 +10,5 @@ class RefreshToken(Document):
     created_at: datetime = datetime.utcnow()
     expires_at: datetime = created_at + timedelta(days=30)
 
-
     class Settings:
         name = "refreshTokens"
-

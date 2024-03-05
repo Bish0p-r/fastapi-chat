@@ -1,12 +1,13 @@
-from fastapi import Depends
 from typing import Annotated
 
-from app.services.user import UserServices
+from fastapi import Depends
+
 from app.repositories.user import UserRepository
+from app.services.user import UserServices
 
 
 async def get_user_services():
     return UserServices(UserRepository)
 
-GetUserServices = Annotated[UserServices, Depends(get_user_services)]
 
+GetUserServices = Annotated[UserServices, Depends(get_user_services)]

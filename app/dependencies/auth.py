@@ -1,19 +1,18 @@
-from fastapi import Depends, Request, status, HTTPException, WebSocket
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from typing import Annotated
 
-from app.dependencies.token import get_jwt_token_services, GetTokenServices
+from fastapi import Depends, HTTPException, Request, WebSocket, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+from app.common.exceptions import InvalidTokenException
+from app.dependencies.token import GetTokenServices, get_jwt_token_services
 from app.models.user import User
 from app.repositories.user import UserRepository
 from app.services.auth import AuthServices
-from app.common.exceptions import InvalidTokenException
 
 
 async def get_auth_services():
-    return AuthServices(
-        user_repository=UserRepository,
-        token_services= await get_jwt_token_services()
-    )
+    return AuthServices(user_repository=UserRepository, token_services=await get_jwt_token_services())
+
 
 GetAuthServices = Annotated[AuthServices, Depends(get_auth_services)]
 
@@ -29,6 +28,7 @@ async def get_current_user_from_token(token_services: GetTokenServices, token: h
     if user is None or payload.get("user_agent") is None or user_agent != payload.get("user_agent"):
         raise InvalidTokenException
     return user
+
 
 GetCurrentUser = Annotated[User, Depends(get_current_user_from_token)]
 
@@ -46,6 +46,7 @@ async def get_current_user_from_token_ws(token_services: GetTokenServices, webso
         raise InvalidTokenException
     return user
 
+
 GetCurrentUserWS = Annotated[User, Depends(get_current_user_from_token_ws)]
 
 
@@ -61,5 +62,6 @@ async def get_current_user_from_cookie(token_services: GetTokenServices, request
     if user is None or payload.get("user_agent") is None or user_agent != payload.get("user_agent"):
         raise InvalidTokenException
     return user
+
 
 GetCurrentUserFromCookie = Annotated[User, Depends(get_current_user_from_cookie)]

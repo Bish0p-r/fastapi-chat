@@ -1,12 +1,10 @@
 from fastapi import FastAPI
 
-from app.db.mongodb import init_db
 from app.common.scheduler import scheduler
-
+from app.db.mongodb import init_db
 from app.routes.auth import router as auth_router
-from app.routes.user import router as user_router
 from app.routes.chat import router as chat_router
-
+from app.routes.user import router as user_router
 
 app = FastAPI()
 

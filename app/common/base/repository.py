@@ -1,5 +1,6 @@
 from beanie import PydanticObjectId
 
+
 class BaseRepository:
     collection = None
 
@@ -19,4 +20,4 @@ class BaseRepository:
 
     @classmethod
     async def delete_by_id(cls, _id: PydanticObjectId | str) -> None:
-         await cls.collection.find(cls.collection.id == _id).delete()
+        await cls.collection.find(cls.collection.id == _id).delete()

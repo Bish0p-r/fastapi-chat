@@ -1,16 +1,17 @@
 from collections import defaultdict
 from typing import Dict
 
-from aio_pika import ExchangeType, connect, Message as pika_Message
+from aio_pika import ExchangeType
+from aio_pika import Message as pika_Message
+from aio_pika import connect
 from aio_pika.abc import AbstractIncomingMessage
 from beanie import PydanticObjectId
-from fastapi import HTTPException, status, WebSocket, WebSocketDisconnect
-import aio_pika
+from fastapi import HTTPException, WebSocket, WebSocketDisconnect, status
 
-from app.models.user import User
-from app.models.chat import ChatRoom, Message
-from app.repositories.chat import ChatRepository, MessageRepository
+from app.common.exceptions import YouDontHavePermissionException
 from app.config import settings
+from app.models.user import User
+from app.repositories.chat import ChatRepository, MessageRepository
 
 
 class ChatManager:
@@ -31,10 +32,8 @@ class ChatManager:
 
     async def response(self):
         await self.ws.accept()
-        #TODO: send recent messages
         try:
             while True:
-                print(self._clients)
                 message = await self.ws.receive_text()
                 await self.message_repository.create(message=message, chat_room_id=self.room_id, user=self.user)
                 await self.sender.send(message, room_id=self.room_id)
@@ -55,7 +54,7 @@ class RMQManager:
     async def setup(self):
         connection = await connect(settings.RABBITMQ_URI)
         channel = await connection.channel()
-        exchange = await channel.declare_exchange('wschat', ExchangeType.FANOUT, durable=True)
+        exchange = await channel.declare_exchange("wschat", ExchangeType.FANOUT, durable=True)
         queue = await channel.declare_queue(exclusive=True)
 
         await queue.bind(exchange)
@@ -65,21 +64,25 @@ class RMQManager:
         self._is_ready = True
 
     async def on_message(self, message: AbstractIncomingMessage):
-        room_id = message.headers.get('room_id')
+        room_id = message.headers.get("room_id")
 
         async with message.process():
             await self._chat_manger.send(message.body.decode(), key=room_id)
 
-    async def send(self, message: str, routing_key='', room_id='123'):
+    async def send(self, message: str, routing_key="", room_id="123"):
         msg = pika_Message(message.encode())
-        msg.headers['room_id'] = room_id
+        msg.headers["room_id"] = room_id
         await self.exchange.publish(msg, routing_key=routing_key)
 
 
 class ChatServices:
-    _chat_manger = ChatManager
+    _chat_manager = ChatManager
 
-    def __init__(self, chat_repository: type[ChatRepository], message_repository: type[MessageRepository]):
+    def __init__(
+        self,
+        chat_repository: type[ChatRepository],
+        message_repository: type[MessageRepository],
+    ):
         self.repository = chat_repository
         self.message_repository = message_repository
 
@@ -90,13 +93,30 @@ class ChatServices:
         return await self.repository.create(**{"owner": user, "users": [user]})
 
     async def start_chat(self, ws: WebSocket, manager: RMQManager, room_id: str, user: User):
-        chat_manager = self._chat_manger(
-            ws=ws, sender=manager, room_id=room_id, user=user, repository=self.message_repository
+        chat_manager = self._chat_manager(
+            ws=ws,
+            sender=manager,
+            room_id=room_id,
+            user=user,
+            repository=self.message_repository,
         )
         await chat_manager.response()
 
     async def public_chat_list(self):
         return await self.repository.get_rooms_list()
+
+    async def is_user_have_permission(self, user_id: PydanticObjectId, room_id: PydanticObjectId) -> None:
+        room = await self.repository.get_by_kwargs(_id=room_id)
+        if room is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        users_ids = [i.id for i in room.users]
+        if room.is_private and user_id not in users_ids:
+            raise YouDontHavePermissionException
+
+    async def add_user_to_chat(self, invited_user: User, user_id: PydanticObjectId, room_id: PydanticObjectId | str):
+        await self.is_user_have_permission(user_id=user_id, room_id=room_id)
+        return await self.repository.add_user_to_chat_room(room_id=room_id, user=invited_user)
+
 
 class MessageServices:
     def __init__(self, repository: type[MessageRepository]):
@@ -104,5 +124,3 @@ class MessageServices:
 
     async def get_messages(self, room_id: PydanticObjectId):
         return await self.repository.get_chat_messages(chat_id=room_id)
-
-

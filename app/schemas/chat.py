@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from beanie import PydanticObjectId
-from pydantic import BaseModel, EmailStr, Field, model_validator, ConfigDict
+from pydantic import BaseModel
 
 from app.schemas.user import UserSchema
 

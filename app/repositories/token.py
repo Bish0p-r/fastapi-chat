@@ -2,8 +2,9 @@ from datetime import datetime
 
 from beanie import PydanticObjectId
 
-from app.models.auth import RefreshToken
 from app.common.base.repository import BaseRepository
+from app.models.auth import RefreshToken
+
 
 class JWTTokenRepository(BaseRepository):
     collection: RefreshToken = RefreshToken
@@ -22,7 +23,9 @@ class JWTTokenRepository(BaseRepository):
 
     @classmethod
     async def delete_by_agent_and_id(cls, user_id, user_agent) -> None:
-        await cls.collection.find_all(cls.collection.user_id == user_id).find_many(cls.collection.user_agent == user_agent).delete()
+        await cls.collection.find_all(cls.collection.user_id == user_id).find_many(
+            cls.collection.user_agent == user_agent
+        ).delete()
 
     @classmethod
     async def delete_expired_tokens(cls) -> None:

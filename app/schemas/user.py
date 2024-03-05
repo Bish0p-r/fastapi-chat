@@ -1,5 +1,5 @@
 from beanie import PydanticObjectId
-from pydantic import BaseModel, EmailStr, Field, model_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 
 class UserLoginSchema(BaseModel):
@@ -34,3 +34,7 @@ class UserSchema(BaseModel):
     first_name: str
     last_name: str
     email: EmailStr
+
+
+class UserIdSchema(BaseModel):
+    id: PydanticObjectId = Field(alias="user_id")

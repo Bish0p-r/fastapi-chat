@@ -83,7 +83,7 @@
             document.querySelector("#ws-id").textContent =`{{ user.id }}`;
 
             async function getLastMessages() {
-                const url = `http://127.0.0.1:8000/chat/messages/${room_id}`
+                const url = `http://127.0.0.1:8000/chat/${room_id}/messages`
                 const response = await fetch(url, {
                     method: 'GET'
                 })

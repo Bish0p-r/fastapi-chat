@@ -1,5 +1,5 @@
-from app.models.user import User
 from app.common.base.repository import BaseRepository
+from app.models.user import User
 
 
 class UserRepository(BaseRepository):
@@ -10,4 +10,3 @@ class UserRepository(BaseRepository):
         instance = await cls.collection.find_one(cls.collection.id == user_id)
         await instance.set(user_data)
         return instance
-
