@@ -26,5 +26,15 @@ class Settings(BaseSettings):
     def MONGODB_CONN_STRING(self):
         return f"mongodb://{self.MONGODB_USER}:{self.MONGODB_PASSWORD}@{self.MONGODB_HOST}:{self.MONGODB_PORT}"
 
+    REDIS_HOST: str
+    REDIS_PORT: int
+
+    @property
+    def REDIS_URI(self):
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
+
+    CACHE_TTL: int = 60
+
+
 
 settings = Settings()

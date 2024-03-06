@@ -1,5 +1,7 @@
+from cashews import cache
 from fastapi import FastAPI
 
+from app.config import settings
 from app.common.scheduler import scheduler
 from app.db.mongodb import init_db
 from app.routes.auth import router as auth_router
@@ -17,3 +19,4 @@ app.include_router(chat_router)
 async def start_db():
     await init_db()
     scheduler.start()
+    cache.setup(settings.REDIS_URI)

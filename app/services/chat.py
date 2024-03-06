@@ -89,6 +89,9 @@ class ChatServices:
     async def get_available_chats(self):
         return await self.repository.get_list()
 
+    async def get_my_chats(self, user: User):
+        return await self.repository.get_user_chats(user=user)
+
     async def create_chat_room(self, user: User):
         return await self.repository.create(**{"owner": user, "users": [user]})
 

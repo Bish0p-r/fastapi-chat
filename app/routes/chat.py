@@ -1,15 +1,13 @@
 from typing import Annotated
 
+from cashews import cache
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Request, WebSocket
 from fastapi.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
 
-from app.dependencies.auth import (
-    GetCurrentUser,
-    GetCurrentUserFromCookie,
-    GetCurrentUserWS,
-)
+from app.config import settings
+from app.dependencies.auth import GetCurrentUserFromCookie, GetCurrentUserWS
 from app.dependencies.chat import GetChatServices, GetMessageServices, GetWSChatManager
 from app.dependencies.user import GetUserServices
 from app.models.chat import Message
@@ -25,17 +23,21 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/")
+@cache(ttl=settings.CACHE_TTL, key="list:chats")
 async def get_available_chats(chat_services: GetChatServices) -> list[ChatSchema]:
     return await chat_services.get_available_chats()
 
 
-@router.get("/")
-async def get_my_chats(chat_services: GetChatServices) -> list[ChatSchema]:
-    return await chat_services.get_available_chats()
+@router.get("/my_chats")
+@cache(ttl=settings.CACHE_TTL, key="list:users_{user.id}_chats")
+async def get_my_chats(chat_services: GetChatServices, user: GetCurrentUserFromCookie) -> list[ChatSchema]:
+    return await chat_services.get_my_chats(user=user)
 
 
 @router.post("/")
-async def create_chat_room(user: GetCurrentUser, chat_services: GetChatServices):
+@cache.invalidate("list:chats")
+@cache(ttl=settings.CACHE_TTL, key="list:users_{user.id}_chats")
+async def create_chat_room(user: GetCurrentUserFromCookie, chat_services: GetChatServices):
     return await chat_services.create_chat_room(user=user)
 
 

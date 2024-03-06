@@ -1,3 +1,4 @@
+from cashews import cache
 from fastapi import APIRouter, Request, Response, status
 
 from app.common.base.schemas import JsonResponseSchema
@@ -13,6 +14,7 @@ router = APIRouter(
 
 
 @router.post("/registration", status_code=status.HTTP_201_CREATED, response_model=User)
+@cache.invalidate("list:users")
 async def registration(user_data: UserCreateSchema, auth_services: GetAuthServices):
     return await auth_services.create_user(user_data=user_data.model_dump(mode="json"))
 
