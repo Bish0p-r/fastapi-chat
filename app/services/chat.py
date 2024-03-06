@@ -120,6 +120,9 @@ class ChatServices:
         await self.is_user_have_permission(user_id=user_id, room_id=room_id)
         return await self.repository.add_user_to_chat_room(room_id=room_id, user=invited_user)
 
+    async def leave_from_chat(self, room_id: PydanticObjectId | str, user: User):
+        return await self.repository.delete_user_from_chat(room_id=room_id, user=user)
+
 
 class MessageServices:
     def __init__(self, repository: type[MessageRepository]):

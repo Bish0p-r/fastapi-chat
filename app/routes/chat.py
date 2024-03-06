@@ -36,7 +36,6 @@ async def get_my_chats(chat_services: GetChatServices, user: GetCurrentUserFromC
 
 @router.post("/")
 @cache.invalidate("list:chats")
-@cache(ttl=settings.CACHE_TTL, key="list:users_{user.id}_chats")
 async def create_chat_room(
     user: GetCurrentUserFromCookie, chat_services: GetChatServices, chat_data: ChatCreateSchema
 ) -> ChatSchema:
@@ -53,6 +52,17 @@ async def add_user_to_chat(
 ) -> ChatSchema:
     invited_user = await user_services.get_user_by_id(user_id=invited_user_id.id)
     return await chat_services.add_user_to_chat(invited_user, user.id, room_id)
+
+
+@router.post("/{room_id}/leave")
+@cache.invalidate("list:chats")
+@cache.invalidate("list:users_{user.id}_chats")
+async def leave_from_chat(
+    chat_services: GetChatServices,
+    room_id: PydanticObjectId,
+    user: GetCurrentUserFromCookie,
+) -> ChatSchema:
+    return await chat_services.leave_from_chat(room_id=room_id, user=user)
 
 
 @router.get("/{room_id}/messages")
