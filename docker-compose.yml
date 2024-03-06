@@ -2,27 +2,61 @@ version: '3.8'
 
 services:
   mongodb:
-    container_name: chat_mongodb
     image: mongo:7.0
+    container_name: chat_mongodb
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin
+    healthcheck:
+      test: [ "CMD","mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     ports:
       - 27017:27017
     volumes:
       - mongodata:/data/db
 
   rabbitmq:
-    container_name: chat_rabbitmq
     image: rabbitmq:3.12.12-management
+    container_name: chat_rabbitmq
     hostname: rabbitmq
     restart: always
-    environment:
-      - RABBITMQ_DEFAULT_USER=admin
-      - RABBITMQ_DEFAULT_PASS=admin
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 5s
+      timeout: 5s
+      retries: 15
     ports:
       - 5672:5672
       - 15672:15672
+
+  redis:
+    image: redis:7.0
+    container_name: chat_redis
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli ping | grep PONG" ]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build:
+      context: .
+    container_name: chat_app
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    command: sh -c "uvicorn app.main:app --reload --host 0.0.0.0"
+    ports:
+      - 8000:8000
 
 volumes:
   mongodata:
