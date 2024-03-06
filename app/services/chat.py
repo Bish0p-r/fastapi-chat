@@ -10,6 +10,7 @@ from fastapi import HTTPException, WebSocket, WebSocketDisconnect, status
 
 from app.common.exceptions import YouDontHavePermissionException
 from app.config import settings
+from app.models.chat import ChatRoom
 from app.models.user import User
 from app.repositories.chat import ChatRepository, MessageRepository
 from app.schemas.chat import ChatSchema, MessageSchema
@@ -90,7 +91,7 @@ class ChatServices:
     async def get_available_chats(self) -> list[ChatSchema]:
         return await self.repository.get_list()
 
-    async def get_my_chats(self, user: User) -> list[ChatSchema]:
+    async def get_my_chats(self, user: User) -> list[ChatRoom]:
         return await self.repository.get_user_chats(user=user)
 
     async def create_chat_room(self, user: User, chat_data: dict) -> ChatSchema:
@@ -116,11 +117,11 @@ class ChatServices:
 
     async def add_user_to_chat(
         self, invited_user: User, user_id: PydanticObjectId, room_id: PydanticObjectId | str
-    ) -> ChatSchema:
+    ) -> ChatRoom:
         await self.is_user_have_permission(user_id=user_id, room_id=room_id)
         return await self.repository.add_user_to_chat_room(room_id=room_id, user=invited_user)
 
-    async def leave_from_chat(self, room_id: PydanticObjectId | str, user: User):
+    async def leave_from_chat(self, room_id: PydanticObjectId, user: User) -> ChatRoom:
         return await self.repository.delete_user_from_chat(room_id=room_id, user=user)
 
 

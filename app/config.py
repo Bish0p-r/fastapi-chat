@@ -25,8 +25,8 @@ class Settings(BaseSettings):
         return f"mongodb://{self.MONGODB_USER}:{self.MONGODB_PASSWORD}@{self.MONGODB_HOST}:{self.MONGODB_PORT}"
 
     RABBITMQ_HOST: str
-    RABBITMQ_USER:str
-    RABBITMQ_PASS:str
+    RABBITMQ_USER: str
+    RABBITMQ_PASS: str
 
     @property
     def RABBITMQ_URI(self):

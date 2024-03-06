@@ -18,7 +18,7 @@ class ChatRepository(BaseRepository):
         return await cls.collection.find_many(ElemMatch(cls.collection.users, _id=user.id)).to_list()
 
     @classmethod
-    async def delete_user_from_chat(cls, room_id: PydanticObjectId, user: User):
+    async def delete_user_from_chat(cls, room_id: PydanticObjectId, user: User) -> collection:
         instance = await cls.collection.find_one(cls.collection.id == room_id)
         instance.users = [u for u in instance.users if u.id != user.id]
         await instance.save()
