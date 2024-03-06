@@ -2,8 +2,8 @@ from beanie import PydanticObjectId
 from cashews import cache
 from fastapi import APIRouter
 
-from app.config import settings
 from app.common.base.schemas import JsonResponseSchema
+from app.config import settings
 from app.dependencies.auth import GetCurrentUser, GetCurrentUserFromCookie
 from app.dependencies.user import GetUserServices
 from app.models.user import User

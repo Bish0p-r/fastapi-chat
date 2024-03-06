@@ -1,7 +1,7 @@
 from typing import Annotated
 
-from cashews import cache
 from beanie import PydanticObjectId
+from cashews import cache
 from fastapi import APIRouter, Depends, Request, WebSocket
 from fastapi.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
@@ -11,7 +11,7 @@ from app.dependencies.auth import GetCurrentUserFromCookie, GetCurrentUserWS
 from app.dependencies.chat import GetChatServices, GetMessageServices, GetWSChatManager
 from app.dependencies.user import GetUserServices
 from app.models.chat import Message
-from app.schemas.chat import ChatSchema
+from app.schemas.chat import ChatCreateSchema, ChatSchema
 from app.schemas.user import UserIdSchema
 
 router = APIRouter(
@@ -37,19 +37,10 @@ async def get_my_chats(chat_services: GetChatServices, user: GetCurrentUserFromC
 @router.post("/")
 @cache.invalidate("list:chats")
 @cache(ttl=settings.CACHE_TTL, key="list:users_{user.id}_chats")
-async def create_chat_room(user: GetCurrentUserFromCookie, chat_services: GetChatServices):
-    return await chat_services.create_chat_room(user=user)
-
-
-@router.get("/{room_id}/messages")
-async def get_chat_messages(
-    chat_services: GetChatServices,
-    message_services: GetMessageServices,
-    room_id: PydanticObjectId,
-    user: GetCurrentUserFromCookie,
-) -> list[Message]:
-    await chat_services.is_user_have_permission(user_id=user.id, room_id=room_id)
-    return await message_services.get_messages(room_id=room_id)
+async def create_chat_room(
+    user: GetCurrentUserFromCookie, chat_services: GetChatServices, chat_data: ChatCreateSchema
+) -> ChatSchema:
+    return await chat_services.create_chat_room(user=user, chat_data=chat_data.model_dump())
 
 
 @router.post("/{room_id}")
@@ -62,6 +53,17 @@ async def add_user_to_chat(
 ) -> ChatSchema:
     invited_user = await user_services.get_user_by_id(user_id=invited_user_id.id)
     return await chat_services.add_user_to_chat(invited_user, user.id, room_id)
+
+
+@router.get("/{room_id}/messages")
+async def get_chat_messages(
+    chat_services: GetChatServices,
+    message_services: GetMessageServices,
+    room_id: PydanticObjectId,
+    user: GetCurrentUserFromCookie,
+) -> list[Message]:
+    await chat_services.is_user_have_permission(user_id=user.id, room_id=room_id)
+    return await message_services.get_messages(room_id=room_id)
 
 
 @router.get("/{room_id}")

@@ -12,6 +12,7 @@ from app.common.exceptions import YouDontHavePermissionException
 from app.config import settings
 from app.models.user import User
 from app.repositories.chat import ChatRepository, MessageRepository
+from app.schemas.chat import ChatSchema, MessageSchema
 
 
 class ChatManager:
@@ -86,16 +87,16 @@ class ChatServices:
         self.repository = chat_repository
         self.message_repository = message_repository
 
-    async def get_available_chats(self):
+    async def get_available_chats(self) -> list[ChatSchema]:
         return await self.repository.get_list()
 
-    async def get_my_chats(self, user: User):
+    async def get_my_chats(self, user: User) -> list[ChatSchema]:
         return await self.repository.get_user_chats(user=user)
 
-    async def create_chat_room(self, user: User):
-        return await self.repository.create(**{"owner": user, "users": [user]})
+    async def create_chat_room(self, user: User, chat_data: dict) -> ChatSchema:
+        return await self.repository.create(**{"owner": user, "users": [user]}, **chat_data)
 
-    async def start_chat(self, ws: WebSocket, manager: RMQManager, room_id: str, user: User):
+    async def start_chat(self, ws: WebSocket, manager: RMQManager, room_id: str, user: User) -> None:
         chat_manager = self._chat_manager(
             ws=ws,
             sender=manager,
@@ -105,9 +106,6 @@ class ChatServices:
         )
         await chat_manager.response()
 
-    async def public_chat_list(self):
-        return await self.repository.get_rooms_list()
-
     async def is_user_have_permission(self, user_id: PydanticObjectId, room_id: PydanticObjectId) -> None:
         room = await self.repository.get_by_kwargs(_id=room_id)
         if room is None:
@@ -116,7 +114,9 @@ class ChatServices:
         if room.is_private and user_id not in users_ids:
             raise YouDontHavePermissionException
 
-    async def add_user_to_chat(self, invited_user: User, user_id: PydanticObjectId, room_id: PydanticObjectId | str):
+    async def add_user_to_chat(
+        self, invited_user: User, user_id: PydanticObjectId, room_id: PydanticObjectId | str
+    ) -> ChatSchema:
         await self.is_user_have_permission(user_id=user_id, room_id=room_id)
         return await self.repository.add_user_to_chat_room(room_id=room_id, user=invited_user)
 
@@ -125,5 +125,5 @@ class MessageServices:
     def __init__(self, repository: type[MessageRepository]):
         self.repository = repository
 
-    async def get_messages(self, room_id: PydanticObjectId):
+    async def get_messages(self, room_id: PydanticObjectId) -> list[MessageSchema]:
         return await self.repository.get_chat_messages(chat_id=room_id)

@@ -19,3 +19,7 @@ class ChatSchema(BaseModel):
     owner: UserSchema
     users: list[UserSchema]
     is_private: bool = False
+
+
+class ChatCreateSchema(BaseModel):
+    is_private: bool = False

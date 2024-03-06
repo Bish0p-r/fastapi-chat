@@ -1,8 +1,8 @@
 from cashews import cache
 from fastapi import FastAPI
 
-from app.config import settings
 from app.common.scheduler import scheduler
+from app.config import settings
 from app.db.mongodb import init_db
 from app.routes.auth import router as auth_router
 from app.routes.chat import router as chat_router

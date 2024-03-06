@@ -36,5 +36,4 @@ class Settings(BaseSettings):
     CACHE_TTL: int = 60
 
 
-
 settings = Settings()
